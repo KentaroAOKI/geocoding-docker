@@ -1,0 +1,8 @@
+Fiona==1.8.18
+Flask==1.1.2
+geojson==2.5.0
+geopandas==0.8.1
+numpy==1.19.5
+pandas==1.2.0
+requests==2.25.1
+Shapely==1.7.1
