@@ -19,7 +19,8 @@ for file in glob.glob("shapes/*.shp"):
     if df_shp_estat is None:
         df_shp_estat = gpd.read_file(file,encoding='SHIFT-JIS')
     else:
-        df_shp_estat.append(gpd.read_file(file,encoding='SHIFT-JIS'))
+        df_shp_estat = df_shp_estat.append(gpd.read_file(file,encoding='SHIFT-JIS'))
+print('Completed loading {0} shapes.'.format(len(df_shp_estat)))
 
 def proc_geometry(df_func):
     result = {}
@@ -97,6 +98,12 @@ def within():
 @app.route('/covers', methods=['POST'])
 def covers():
     return(proc_geometry(df_covers))
+@app.after_request
+def after_request(response):
+  response.headers.add('Access-Control-Allow-Headers', 'Origin,Accept,X-Requested-With,Content-Type,Access-Control-Request-Method,Access-Control-Request-Headers,Range')
+  response.headers.add('Access-Control-Allow-Methods', 'GET,POST,HEAD,OPTIONS')
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=3000, threaded=True)
