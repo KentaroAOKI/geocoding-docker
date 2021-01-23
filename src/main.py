@@ -22,9 +22,32 @@ for file in glob.glob("shapes/*.shp"):
         df_shp_estat = df_shp_estat.append(gpd.read_file(file,encoding='SHIFT-JIS'))
 print('Completed loading {0} shapes.'.format(len(df_shp_estat)))
 
+# for e-stat data
+def proc_address(prefecture=None,city=None,street=None):
+    result = {}
+    if request.method == 'GET' and (prefecture != None or city != None or street != None):
+        try:
+            df_result = df_shp_estat
+            if (prefecture != None):
+                df_result = df_result[df_result['PREF_NAME'].str.contains(prefecture)]
+            if (city != None):
+                df_result = df_result[df_result['CITY_NAME'].str.contains(city)]
+            if (street != None):
+                df_result = df_result[df_result['S_NAME'].str.contains(street)]
+            if not df_result.empty:
+                output = "result_{0}_{1}.geojson".format( os.getpid(), threading.get_ident())
+                df_result.to_file(output, driver="GeoJSON", encoding='UTF-8')
+                with open(output, 'r', encoding='UTF-8') as f:
+                    result_string = f.read().replace("\n","")
+                os.remove(output)
+                result = json.loads(result_string)
+        except Exception as e:
+            print("Exception {0} {1}".format(type(e), e.args))
+            abort(404)
+    return jsonify(result)
+
 def proc_geometry(df_func):
     result = {}
-    print(request.method)
     if request.method == 'GET':
         return jsonify(result)
     elif request.method == 'POST':
@@ -98,6 +121,12 @@ def within():
 @app.route('/covers', methods=['POST'])
 def covers():
     return(proc_geometry(df_covers))
+@app.route('/address', methods=['GET'])
+def address():
+    prefecture = request.args.get('prefecture')
+    city = request.args.get('city')
+    street = request.args.get('street')
+    return(proc_address(prefecture = prefecture, city = city, street = street))
 @app.after_request
 def after_request(response):
   response.headers.add('Access-Control-Allow-Headers', 'Origin,Accept,X-Requested-With,Content-Type,Access-Control-Request-Method,Access-Control-Request-Headers,Range')
@@ -106,4 +135,4 @@ def after_request(response):
   return response
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=3000, threaded=True)
+    app.run(host='localhost', port=3000, threaded=True)
